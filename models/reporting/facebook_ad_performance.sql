@@ -22,7 +22,5 @@ date,
 date_granularity,
 spend,
 impressions,
-link_clicks,
-purchases,
-revenue
+link_clicks
 FROM {{ ref('facebook_performance_by_ad') }}
