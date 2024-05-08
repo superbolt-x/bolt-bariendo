@@ -34,4 +34,4 @@ LEFT JOIN
         GROUP BY 1,2,3,4
         {% if not loop.last %}UNION ALL
         {% endif %}
-    {% endfor %})) USING(date_granularity, date, account_id, campaign_id)
+    {% endfor %}) USING(date_granularity, date, account_id, campaign_id)
