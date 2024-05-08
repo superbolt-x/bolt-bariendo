@@ -19,7 +19,9 @@ conversions as purchases,
 conversions_value as revenue,
 search_impression_share,
 search_budget_lost_impression_share,
-search_rank_lost_impression_share
+search_rank_lost_impression_share,
+signups,
+consultation_payment
 FROM {{ ref('googleads_performance_by_campaign') }}
 LEFT JOIN 
     ({%- for date_granularity in date_granularity_list %}
