@@ -22,5 +22,7 @@ date,
 date_granularity,
 spend,
 impressions,
-link_clicks
+link_clicks,
+offsite_conversion.fb_pixel_custom.signup_success as signups,
+offsite_conversion.fb_pixel_custom.consultation_payment as consultation_payment
 FROM {{ ref('facebook_performance_by_ad') }}
