@@ -9,3 +9,12 @@ sources:
 
       - name: ad_convtype_performance_report
         identifier: ad_convtype_performance_report
+
+  - name: reporting
+    schema: reporting
+    tables:
+      - name: facebook_ad_performance
+        identifier: bariendo_facebook_ad_performance
+
+      - name: googleads_campaign_performance
+        identifier: bariendo_googleads_campaign_performance
