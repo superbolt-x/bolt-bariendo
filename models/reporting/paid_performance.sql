@@ -3,28 +3,29 @@
 )}}
 
 WITH paid_data as 
-    (SELECT 'Facebook' as channel, date, 
+    (SELECT 'Facebook' as channel, date, date_granularity, 
         COALESCE(SUM(spend),0) as spend, 
         COALESCE(SUM(link_clicks),0) as clicks, 
         COALESCE(SUM(impressions),0) as impressions,
         COALESCE(SUM(signups),0) as signups,
         COALESCE(SUM(consultation_payment),0) as consultation_payment
     FROM {{ source('reporting','facebook_ad_performance') }}
-    GROUP BY 1,2
+    GROUP BY 1,2,3
     
     UNION ALL
     
-    SELECT 'Google Ads' as channel, date, 
+    SELECT 'Google Ads' as channel, date, date_granularity, 
         COALESCE(SUM(spend),0) as spend, 
         COALESCE(SUM(clicks),0) as clicks, 
         COALESCE(SUM(impressions),0) as impressions,
         COALESCE(SUM(signups),0) as signups,
         COALESCE(SUM(consultation_payment),0) as consultation_payment
     FROM {{ source('reporting','googleads_campaign_performance') }}
-    GROUP BY 1,2)
+    GROUP BY 1,2,3)
 
 SELECT channel,
     date,
+    date_granularity,
     spend,
     clicks,
     impressions,
