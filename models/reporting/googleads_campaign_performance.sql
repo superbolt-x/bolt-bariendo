@@ -20,3 +20,4 @@ search_budget_lost_impression_share,
 search_rank_lost_impression_share,
 signup as signups,
 consultationpayment as consultation_payment
+FROM {{ref('googleads_performance_by_campaign')}}
