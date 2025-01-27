@@ -18,3 +18,9 @@ sources:
 
       - name: googleads_campaign_performance
         identifier: bariendo_googleads_campaign_performance
+  
+  - name: facebook_raw
+    schema: facebook_raw
+    tables:
+      - name: ads_insights_actions
+        identifier: ads_insights_actions
