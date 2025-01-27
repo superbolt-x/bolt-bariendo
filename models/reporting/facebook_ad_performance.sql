@@ -24,7 +24,7 @@ spend,
 impressions,
 link_clicks,
 "offsite_conversion.fb_pixel_custom.signup_success" as signups,
-CASE WHEN date BETWEEN '2024-01-01' AND '2024-04-30' THEN leads ELSE "offsite_conversion.fb_pixel_custom.consultation_payment" as consultation_payment
+CASE WHEN date BETWEEN '2024-01-01' AND '2024-04-30' THEN leads ELSE "offsite_conversion.fb_pixel_custom.consultation_payment" END as consultation_payment
 FROM {{ ref('facebook_performance_by_ad') }}
 LEFT JOIN (SELECT ad_id, date::date as date, COALESCE(SUM(value),0) as leads FROM {{ source('facebook_raw','ads_insights_actions') }} WHERE action_type = 'lead' GROUP BY 1,2)
     USING(ad_id, date)
