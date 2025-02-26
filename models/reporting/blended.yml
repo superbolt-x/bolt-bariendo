@@ -24,3 +24,11 @@ sources:
     tables:
       - name: ads_insights_actions
         identifier: ads_insights_actions
+
+  - name: s3_raw
+    schema: s3_raw
+    tables:
+      - name: consults
+        identifier: consults
+      - name: signups
+        identifier: signups
