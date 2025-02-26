@@ -126,4 +126,4 @@ JOIN posthog_payment_data pd
     ON pps.date = pd.date 
     AND pps.date_granularity = pd.date_granularity 
     AND pps.channel = pd.channel
-ORDER BY pps.date DESC, pps.channel;
+ORDER BY pps.date DESC, pps.channel
