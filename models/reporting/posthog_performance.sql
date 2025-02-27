@@ -1,7 +1,6 @@
 {{ config (
     alias = target.database + '_posthog_performance'
 )}}
-
 WITH posthog_payment_data AS (
     SELECT 
         date_trunc('day', last_utm_event_date) as date,
@@ -67,7 +66,6 @@ WITH posthog_payment_data AS (
         hours_from_last_utm_event_to_payment
     FROM {{ source('s3_raw','consults') }}
 ),
-
 signup_data AS (
     SELECT 
         date_trunc('day', last_utm_event_date) as date,
@@ -87,8 +85,49 @@ signup_data AS (
         last_utm_campaign,
         hours_from_last_utm_event_to_signup
     FROM {{ source('s3_raw','signups') }}
+    
+    UNION ALL
+    
+    SELECT 
+        date_trunc('week', last_utm_event_date) as date,
+        'week' as date_granularity,
+        CASE 
+            WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
+            WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
+            ELSE 'Other' 
+        END as channel,
+        person_id,
+        first_signup_date,
+        first_utm_event_date,
+        first_utm_source,
+        first_utm_campaign,
+        last_utm_event_date,
+        last_utm_source,
+        last_utm_campaign,
+        hours_from_last_utm_event_to_signup
+    FROM {{ source('s3_raw','signups') }}
+    
+    UNION ALL
+    
+    SELECT 
+        date_trunc('month', last_utm_event_date) as date,
+        'month' as date_granularity,
+        CASE 
+            WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
+            WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
+            ELSE 'Other' 
+        END as channel,
+        person_id,
+        first_signup_date,
+        first_utm_event_date,
+        first_utm_source,
+        first_utm_campaign,
+        last_utm_event_date,
+        last_utm_source,
+        last_utm_campaign,
+        hours_from_last_utm_event_to_signup
+    FROM {{ source('s3_raw','signups') }}
 ),
-
 utm_payment_summary AS (
     SELECT
         date::date as date,
@@ -102,7 +141,6 @@ utm_payment_summary AS (
     FROM posthog_payment_data
     GROUP BY date, date_granularity, channel
 )
-
 SELECT
     pps.date,
     pps.date_granularity,
