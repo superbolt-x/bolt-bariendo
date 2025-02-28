@@ -8,7 +8,7 @@ WITH posthog_data AS (
         c.last_payment_date,
         c.hours_from_last_utm_event_to_payment
     FROM s3_raw.signups s
-    LEFT JOIN s3_raw.consults c USING (pkey)
+    JOIN s3_raw.consults c USING (pkey)
 )
 SELECT
     CASE 
