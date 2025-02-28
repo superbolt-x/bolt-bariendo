@@ -3,11 +3,11 @@
 )}}
 WITH posthog_data AS (
     SELECT 
-        r.*,  -- Prioritize all columns from signups
+        s.*,  -- Prioritize all columns from signups
         c.first_payment_date,
         c.last_payment_date,
         c.hours_from_last_utm_event_to_payment
-    FROM s3_raw.signups r
+    FROM s3_raw.signups s
     LEFT JOIN s3_raw.consults c USING (pkey)
 )
 SELECT
@@ -20,7 +20,6 @@ SELECT
     first_payment_date,
     last_payment_date,
     first_signup_date,
-    last_signup_date,
     first_utm_event_date,
     first_utm_source,
     first_utm_campaign,
