@@ -1,18 +1,18 @@
 {{ config (
     alias = target.database + '_posthog_performance'
 )}}
-
-WITH posthog_data as (
-    SELECT * FROM s3_raw.signups
+WITH posthog_data AS (
+    SELECT *
+    FROM s3_raw.signups
     LEFT JOIN s3_raw.consults USING (pkey)
 )
-
 SELECT
-    case 
-        when last_utm_source in ('facebook','fb') then 'Meta' 
-        when last_utm_source in ('google','youtube') then 'Google'
-        when last_utm_source is null then 'Other'
-    else 'Other' end as channel,
+    CASE 
+        WHEN last_utm_source IN ('facebook','fb') THEN 'Meta' 
+        WHEN last_utm_source IN ('google','youtube') THEN 'Google'
+        WHEN last_utm_source IS NULL THEN 'Other'
+        ELSE 'Other' 
+    END AS channel,
     first_payment_date,
     last_payment_date,
     first_signup_date,
