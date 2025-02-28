@@ -4,7 +4,7 @@
 WITH posthog_data AS (
     SELECT 
         COALESCE(s.pkey, c.pkey) AS pkey,
-        COALESCE(s.first_signup_date, c.first_signup_date) AS first_signup_date,
+        s.first_signup_date,
         COALESCE(s.first_utm_event_date, c.first_utm_event_date) AS first_utm_event_date,
         COALESCE(s.first_utm_source, c.first_utm_source) AS first_utm_source,
         COALESCE(s.first_utm_campaign, c.first_utm_campaign) AS first_utm_campaign,
