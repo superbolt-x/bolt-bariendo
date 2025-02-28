@@ -3,7 +3,14 @@
 )}}
 WITH posthog_data AS (
     SELECT 
-        s.*,  -- Prioritize all columns from signups
+        COALESCE(s.pkey, c.pkey) AS pkey,
+        COALESCE(s.first_signup_date, c.first_signup_date) AS first_signup_date,
+        COALESCE(s.first_utm_event_date, c.first_utm_event_date) AS first_utm_event_date,
+        COALESCE(s.first_utm_source, c.first_utm_source) AS first_utm_source,
+        COALESCE(s.first_utm_campaign, c.first_utm_campaign) AS first_utm_campaign,
+        COALESCE(s.last_utm_event_date, c.last_utm_event_date) AS last_utm_event_date,
+        COALESCE(s.last_utm_source, c.last_utm_source) AS last_utm_source,
+        COALESCE(s.last_utm_campaign, c.last_utm_campaign) AS last_utm_campaign,
         c.first_payment_date,
         c.last_payment_date,
         c.hours_from_last_utm_event_to_payment
