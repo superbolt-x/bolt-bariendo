@@ -2,9 +2,13 @@
     alias = target.database + '_posthog_performance'
 )}}
 WITH posthog_data AS (
-    SELECT *
-    FROM s3_raw.signups
-    LEFT JOIN s3_raw.consults USING (pkey)
+    SELECT 
+        r.*,  -- Prioritize all columns from signups
+        c.first_payment_date,
+        c.last_payment_date,
+        c.hours_from_last_utm_event_to_payment
+    FROM s3_raw.signups r
+    LEFT JOIN s3_raw.consults c USING (pkey)
 )
 SELECT
     CASE 
