@@ -11,6 +11,7 @@ SELECT
     END AS channel,
     first_utm_event_date,
     first_utm_source,
+    last_utm_source,
     first_utm_campaign,
     last_utm_event_date,
     last_utm_campaign,
