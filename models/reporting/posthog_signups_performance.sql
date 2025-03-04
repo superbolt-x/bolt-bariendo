@@ -17,4 +17,4 @@ SELECT
     last_utm_source,
     last_utm_campaign
 FROM {{ source('s3_raw', 'signups') }}
-ORDER BY last_utm_event_date DESC
+ORDER BY first_utm_event_date DESC
