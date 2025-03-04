@@ -19,4 +19,4 @@ SELECT
     last_payment_date,
     hours_from_last_utm_event_to_payment
 FROM {{ source('s3_raw', 'consults') }}
-ORDER BY last_utm_event_date DESC
+ORDER BY first_utm_event_date DESC
