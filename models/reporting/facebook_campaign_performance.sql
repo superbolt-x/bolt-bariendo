@@ -13,5 +13,5 @@ spend,
 impressions,
 link_clicks,
 "offsite_conversion.fb_pixel_custom.signup_success" as signups,
-CASE WHEN date BETWEEN '2024-01-01' AND '2024-04-30' THEN leads ELSE "offsite_conversion.fb_pixel_custom.consultation_payment" END as consultation_payment
+"offsite_conversion.fb_pixel_custom.consultation_payment" as consultation_payment
 FROM {{ ref('facebook_performance_by_campaign') }}
