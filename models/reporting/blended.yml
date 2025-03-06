@@ -15,9 +15,6 @@ sources:
     tables:
       - name: facebook_ad_performance
         identifier: bariendo_facebook_ad_performance
-        
-      - name: facebook_campaign_performance
-        identifier: bariendo_facebook_campaign_performance
 
       - name: googleads_campaign_performance
         identifier: bariendo_googleads_campaign_performance
