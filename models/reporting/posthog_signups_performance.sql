@@ -9,11 +9,11 @@ SELECT
         WHEN last_utm_source IS NULL THEN 'Other'
         ELSE 'Other' 
     END AS channel,
-    first_signup_date,
-    first_utm_event_date,
+    first_signup_date::date,
+    first_utm_event_date::date,
     first_utm_source,
     first_utm_campaign,
-    last_utm_event_date,
+    last_utm_event_date::date,
     last_utm_source,
     last_utm_campaign
 FROM {{ source('s3_raw', 'signups') }}
