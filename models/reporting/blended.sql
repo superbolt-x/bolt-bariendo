@@ -3,7 +3,7 @@
 )}}
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
-{%- set channels = ['Google', 'Meta', 'Other'] -%}
+{%- set channels = ['Google', 'Meta'] -%}
 
 WITH 
     {% for date_granularity in date_granularity_list %}
@@ -45,7 +45,6 @@ WITH
             CASE
                 WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
                 WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
-                WHEN last_utm_source IS NULL THEN 'Other'
                 ELSE 'Other'
             END AS channel,
             COUNT(*) AS posthog_consults
@@ -61,7 +60,6 @@ WITH
             CASE
                 WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
                 WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
-                WHEN last_utm_source IS NULL THEN 'Other'
                 ELSE 'Other'
             END AS channel,
             COUNT(*) AS posthog_signups
@@ -77,7 +75,6 @@ WITH
             CASE
                 WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
                 WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
-                WHEN last_utm_source IS NULL THEN 'Other'
                 ELSE 'Other'
             END AS channel,
             COUNT(*) AS posthog_nonorganic_consults
@@ -90,12 +87,12 @@ WITH
     /* Union all spend data across granularities */
     spend_data AS (
         {% for date_granularity in date_granularity_list %}
-            {% for channel in channels %}
-                SELECT * FROM {{ channel|lower }}_{{ date_granularity }}
-                {% if not (loop.last and loop.index == channels|length and date_granularity == date_granularity_list[-1]) %}
-                UNION ALL
-                {% endif %}
-            {% endfor %}
+            SELECT * FROM google_{{ date_granularity }}
+            UNION ALL
+            SELECT * FROM meta_{{ date_granularity }}
+            {% if not loop.last %}
+            UNION ALL
+            {% endif %}
         {% endfor %}
     ),
     
