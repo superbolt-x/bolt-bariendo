@@ -1,5 +1,5 @@
 {{ config (
-    alias = target.database + '_blended'
+    alias = target.database + '_marketing_performance_blended'
 )}}
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
@@ -18,7 +18,7 @@ WITH
             SUM(clicks) AS clicks,
             SUM(signups) AS signups,
             SUM(consultation_payment) AS consults
-        FROM {{ source('reporting', 'bariendo_googleads_campaign_performance') }}
+        FROM {{ source('reporting', 'googleads_campaign_performance') }}
         GROUP BY 1, 2, 3
     ),
 
@@ -33,7 +33,7 @@ WITH
             SUM(link_clicks) AS clicks,
             SUM(signups) AS signups,
             SUM(consultation_payment) AS consults
-        FROM {{ source('reporting', 'bariendo_facebook_ad_performance') }}
+        FROM {{ source('reporting', 'facebook_ad_performance') }}
         GROUP BY 1, 2, 3
     ),
     
