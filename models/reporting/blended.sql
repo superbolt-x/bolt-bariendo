@@ -1,5 +1,5 @@
 {{ config (
-    alias = target.database + '_marketing_performance_blended'
+    alias = target.database + '_blended'
 )}}
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
@@ -92,7 +92,7 @@ WITH
         {% for date_granularity in date_granularity_list %}
             {% for channel in channels %}
                 SELECT * FROM {{ channel|lower }}_{{ date_granularity }}
-                {% if not loop.last or not loop.parent.last %}
+                {% if not (loop.last and loop.index == channels|length and date_granularity == date_granularity_list[-1]) %}
                 UNION ALL
                 {% endif %}
             {% endfor %}
