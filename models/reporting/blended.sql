@@ -66,7 +66,7 @@ WITH
         SELECT 
             date,
             date_granularity,
-            channel,
+            'Google' as channel,
             SUM(spend) AS spend,
             SUM(impressions) AS impressions,
             SUM(clicks) AS clicks,
@@ -80,7 +80,7 @@ WITH
         SELECT 
             date,
             date_granularity,
-            channel,
+            'Meta' channel,
             SUM(spend) AS spend,
             SUM(impressions) AS impressions,
             SUM(clicks) AS clicks,
