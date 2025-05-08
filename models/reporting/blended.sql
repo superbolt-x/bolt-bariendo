@@ -3,7 +3,7 @@
 )}}
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
-{%- set channels = ['Google', 'Meta'] -%}
+{%- set channels = ['Google', 'Meta', 'Other'] -%}
 
 WITH 
     posthog_consults_initial AS (
@@ -62,10 +62,6 @@ WITH
         {% endif %}
         {% endfor %}
     ),
-        {% if not loop.last %}
-        UNION ALL
-        {% endif %}
-        {% endfor %}
     platform_data AS (
         SELECT 
             date,
@@ -94,6 +90,53 @@ WITH
             0 AS posthog_nonorganic_consults
         FROM {{ source('reporting', 'facebook_ad_performance') }}
         GROUP BY 1, 2, 3 
+    ),
+    combined_data AS (
+        SELECT 
+            date,
+            date_granularity,
+            COALESCE(channel, 'Other') AS channel,
+            SUM(spend) AS spend,
+            SUM(impressions) AS impressions,
+            SUM(clicks) AS clicks,
+            SUM(signups) AS signups,
+            0 AS posthog_signups,
+            0 AS posthog_consults,
+            0 AS posthog_nonorganic_consults
+        FROM platform_data
+        GROUP BY 1, 2, 3
+        
+        UNION ALL
+        
+        SELECT 
+            date,
+            date_granularity,
+            COALESCE(channel, 'Other') AS channel,
+            0 AS spend,
+            0 AS impressions,
+            0 AS clicks,
+            0 AS signups,
+            SUM(posthog_signups) AS posthog_signups,
+            0 AS posthog_consults,
+            0 AS posthog_nonorganic_consults
+        FROM posthog_signups_granular
+        GROUP BY 1, 2, 3
+        
+        UNION ALL
+        
+        SELECT 
+            date,
+            date_granularity,
+            COALESCE(channel, 'Other') AS channel,
+            0 AS spend,
+            0 AS impressions,
+            0 AS clicks,
+            0 AS signups,
+            0 AS posthog_signups,
+            SUM(posthog_consults) AS posthog_consults,
+            SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
+        FROM posthog_consults_granular
+        GROUP BY 1, 2, 3
     )
 
 SELECT
@@ -107,49 +150,7 @@ SELECT
     SUM(posthog_signups) AS posthog_signups,
     SUM(posthog_consults) AS posthog_consults,
     SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
-FROM (
-    SELECT 
-        date,
-        date_granularity,
-        channel,
-        SUM(spend) AS spend,
-        SUM(impressions) AS impressions,
-        SUM(clicks) AS clicks,
-        SUM(signups) AS signups,
-        0 AS posthog_signups,
-        0 AS posthog_consults,
-        0 AS posthog_nonorganic_consults
-    FROM platform_data
-    GROUP BY 1, 2, 3
-    UNION ALL
-    SELECT 
-        date,
-        date_granularity,
-        channel,
-        0 AS spend,
-        0 AS impressions,
-        0 AS clicks,
-        0 AS signups,
-        SUM(posthog_signups) AS posthog_signups,
-        SUM(posthog_consults) AS posthog_consults,
-        SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
-    FROM posthog_signups_granular
-    GROUP BY 1, 2, 3
-    UNION ALL
-    SELECT 
-        date,
-        date_granularity,
-        channel,
-        0 AS spend,
-        0 AS impressions,
-        0 AS clicks,
-        0 AS signups,
-        SUM(posthog_signups) AS posthog_signups,
-        SUM(posthog_consults) AS posthog_consults,
-        SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
-    FROM posthog_consults_granular
-    GROUP BY 1, 2, 3
-) AS combined_data
-GROUP BY 1, 2, 3
+FROM combined_data
 WHERE date >= '2024-08-01'
+GROUP BY 1, 2, 3
 ORDER BY date DESC, date_granularity, channel
