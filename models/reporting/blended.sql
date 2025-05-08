@@ -28,6 +28,7 @@ WITH
             0 AS impressions,
             0 AS clicks,
             0 AS signups,
+            0 AS consults,
             COUNT(*) AS posthog_consults,
             SUM(CASE WHEN last_utm_campaign !~* 'gbp-listing' THEN 1 ELSE 0 END) AS posthog_nonorganic_consults,
             0 AS posthog_signups
@@ -51,7 +52,8 @@ WITH
             0 AS spend,
             0 AS impressions,
             0 AS clicks,
-            0 as signups,
+            0 AS signups,
+            0 AS consults,
             0 AS posthog_consults,
             0 AS posthog_nonorganic_consults,
             COUNT(*) AS posthog_signups
@@ -71,6 +73,7 @@ WITH
             SUM(impressions) AS impressions,
             SUM(clicks) AS clicks,
             SUM(signups) AS signups,
+            SUM(consultation_payment) AS consults,
             0 AS posthog_signups,
             0 AS posthog_consults,
             0 AS posthog_nonorganic_consults
@@ -80,11 +83,12 @@ WITH
         SELECT 
             date,
             date_granularity,
-            'Meta' channel,
+            'Meta' AS channel,
             SUM(spend) AS spend,
             SUM(impressions) AS impressions,
-            SUM(clicks) AS clicks,
+            SUM(link_clicks) AS clicks,
             SUM(signups) AS signups,
+            SUM(consultation_payment) AS consults,
             0 AS posthog_signups,
             0 AS posthog_consults,
             0 AS posthog_nonorganic_consults
@@ -100,9 +104,10 @@ WITH
             SUM(impressions) AS impressions,
             SUM(clicks) AS clicks,
             SUM(signups) AS signups,
-            0 AS posthog_signups,
-            0 AS posthog_consults,
-            0 AS posthog_nonorganic_consults
+            SUM(consults) AS consults,
+            SUM(posthog_signups) AS posthog_signups,
+            SUM(posthog_consults) AS posthog_consults,
+            SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
         FROM platform_data
         GROUP BY 1, 2, 3
         
@@ -116,6 +121,7 @@ WITH
             0 AS impressions,
             0 AS clicks,
             0 AS signups,
+            0 AS consults,
             SUM(posthog_signups) AS posthog_signups,
             0 AS posthog_consults,
             0 AS posthog_nonorganic_consults
@@ -132,6 +138,7 @@ WITH
             0 AS impressions,
             0 AS clicks,
             0 AS signups,
+            0 AS consults,
             0 AS posthog_signups,
             SUM(posthog_consults) AS posthog_consults,
             SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
@@ -147,6 +154,7 @@ SELECT
     SUM(impressions) AS impressions,
     SUM(clicks) AS clicks,
     SUM(signups) AS signups,
+    SUM(consults) AS consults,
     SUM(posthog_signups) AS posthog_signups,
     SUM(posthog_consults) AS posthog_consults,
     SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
