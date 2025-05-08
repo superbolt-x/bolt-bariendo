@@ -6,138 +6,150 @@
 {%- set channels = ['Google', 'Meta'] -%}
 
 WITH 
-    {% for date_granularity in date_granularity_list %}
-    /* Google Ads Data */
-    google_{{ date_granularity }} AS (
+    posthog_consults_initial AS (
+        SELECT *, {{ get_date_parts('last_payment_date') }}
+        FROM {{ source('s3_raw', 'consults') }}
+    ),
+    posthog_signups_initial AS (
+        SELECT *, {{ get_date_parts('first_signup_date') }}
+        FROM {{ source('s3_raw', 'signups') }}
+    ),
+    posthog_consults_granular AS (
+        {% for date_granularity in date_granularity_list %}
         SELECT 
-            date_trunc('{{ date_granularity }}', date) AS date,
+            {{ date_granularity }} AS date,
             '{{ date_granularity }}' AS date_granularity,
-            'Google' AS channel,
+            CASE
+                WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
+                WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
+                ELSE 'Other'
+            END AS channel,
+            0 AS spend,
+            0 AS impressions,
+            0 AS clicks,
+            0 AS signups,
+            COUNT(*) AS posthog_consults,
+            SUM(CASE WHEN last_utm_campaign !~* 'gbp-listing' THEN 1 ELSE 0 END) AS posthog_nonorganic_consults,
+            0 AS posthog_signups
+        FROM posthog_consults_initial
+        GROUP BY 1, 2, 3
+        {% if not loop.last %}
+        UNION ALL
+        {% endif %}
+        {% endfor %}
+    ),
+    posthog_signups_granular AS (
+        {% for date_granularity in date_granularity_list %}
+        SELECT 
+            {{ date_granularity }} AS date,
+            '{{ date_granularity }}' AS date_granularity,
+            CASE
+                WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
+                WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
+                ELSE 'Other'
+            END AS channel,
+            0 AS spend,
+            0 AS impressions,
+            0 AS clicks,
+            0 as signups,
+            0 AS posthog_consults,
+            0 AS posthog_nonorganic_consults,
+            COUNT(*) AS posthog_signups
+        FROM posthog_signups_initial
+        GROUP BY 1, 2, 3
+        {% if not loop.last %}
+        UNION ALL
+        {% endif %}
+        {% endfor %}
+    ),
+        {% if not loop.last %}
+        UNION ALL
+        {% endif %}
+        {% endfor %}
+    platform_data AS (
+        SELECT 
+            date,
+            date_granularity,
+            channel,
             SUM(spend) AS spend,
             SUM(impressions) AS impressions,
             SUM(clicks) AS clicks,
             SUM(signups) AS signups,
-            SUM(consultation_payment) AS consults
+            0 AS posthog_signups,
+            0 AS posthog_consults,
+            0 AS posthog_nonorganic_consults
         FROM {{ source('reporting', 'googleads_campaign_performance') }}
         GROUP BY 1, 2, 3
-    ),
-
-    /* Meta Ads Data */
-    meta_{{ date_granularity }} AS (
+        UNION ALL
         SELECT 
-            date_trunc('{{ date_granularity }}', date) AS date,
-            '{{ date_granularity }}' AS date_granularity,
-            'Meta' AS channel,
+            date,
+            date_granularity,
+            channel,
             SUM(spend) AS spend,
             SUM(impressions) AS impressions,
-            SUM(link_clicks) AS clicks,
+            SUM(clicks) AS clicks,
             SUM(signups) AS signups,
-            SUM(consultation_payment) AS consults
+            0 AS posthog_signups,
+            0 AS posthog_consults,
+            0 AS posthog_nonorganic_consults
         FROM {{ source('reporting', 'facebook_ad_performance') }}
-        GROUP BY 1, 2, 3
-    ),
-    
-    /* PostHog Consults Data */
-    posthog_consults_{{ date_granularity }} AS (
-        SELECT 
-            date_trunc('{{ date_granularity }}', last_payment_date) AS date,
-            '{{ date_granularity }}' AS date_granularity,
-            CASE
-                WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
-                WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
-                ELSE 'Other'
-            END AS channel,
-            COUNT(*) AS posthog_consults
-        FROM {{ source('s3_raw', 'consults') }}
-        GROUP BY 1, 2, 3
-    ),
-    
-    /* PostHog Signups Data */
-    posthog_signups_{{ date_granularity }} AS (
-        SELECT 
-            date_trunc('{{ date_granularity }}', first_signup_date) AS date,
-            '{{ date_granularity }}' AS date_granularity,
-            CASE
-                WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
-                WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
-                ELSE 'Other'
-            END AS channel,
-            COUNT(*) AS posthog_signups
-        FROM {{ source('s3_raw', 'signups') }}
-        GROUP BY 1, 2, 3
-    ),
-    
-    /* PostHog Non-Organic Consults Data */
-    posthog_nonorganic_consults_{{ date_granularity }} AS (
-        SELECT 
-            date_trunc('{{ date_granularity }}', last_payment_date) AS date,
-            '{{ date_granularity }}' AS date_granularity,
-            CASE
-                WHEN last_utm_source IN ('facebook', 'fb') THEN 'Meta'
-                WHEN last_utm_source IN ('google', 'youtube') THEN 'Google'
-                ELSE 'Other'
-            END AS channel,
-            COUNT(*) AS posthog_nonorganic_consults
-        FROM {{ source('s3_raw', 'consults') }}
-        WHERE last_utm_campaign !~* 'gbp-listing'
-        GROUP BY 1, 2, 3
-    ),
-    {% endfor %}
-    
-    /* Union all spend data across granularities */
-    spend_data AS (
-        {% for date_granularity in date_granularity_list %}
-            SELECT * FROM google_{{ date_granularity }}
-            UNION ALL
-            SELECT * FROM meta_{{ date_granularity }}
-            {% if not loop.last %}
-            UNION ALL
-            {% endif %}
-        {% endfor %}
-    ),
-    
-    /* Union all PostHog data across granularities */
-    posthog_data AS (
-        {% for date_granularity in date_granularity_list %}
-            SELECT 
-                ph_consults.date,
-                ph_consults.date_granularity,
-                ph_consults.channel,
-                COALESCE(ph_consults.posthog_consults, 0) AS posthog_consults,
-                COALESCE(ph_signups.posthog_signups, 0) AS posthog_signups,
-                COALESCE(ph_nonorganic.posthog_nonorganic_consults, 0) AS posthog_nonorganic_consults
-            FROM posthog_consults_{{ date_granularity }} ph_consults
-            LEFT JOIN posthog_signups_{{ date_granularity }} ph_signups 
-                ON ph_consults.date = ph_signups.date 
-                AND ph_consults.date_granularity = ph_signups.date_granularity 
-                AND ph_consults.channel = ph_signups.channel
-            LEFT JOIN posthog_nonorganic_consults_{{ date_granularity }} ph_nonorganic 
-                ON ph_consults.date = ph_nonorganic.date 
-                AND ph_consults.date_granularity = ph_nonorganic.date_granularity 
-                AND ph_consults.channel = ph_nonorganic.channel
-            {% if not loop.last %}
-            UNION ALL
-            {% endif %}
-        {% endfor %}
+        GROUP BY 1, 2, 3 
     )
 
-/* Final output joining spend data with PostHog data */
 SELECT
-    spend_data.date::date AS date,
-    spend_data.date_granularity,
-    spend_data.channel,
-    spend_data.spend,
-    spend_data.impressions,
-    spend_data.clicks,
-    spend_data.signups,
-    spend_data.consults,
-    COALESCE(posthog_data.posthog_signups, 0) AS posthog_signups,
-    COALESCE(posthog_data.posthog_consults, 0) AS posthog_consults,
-    COALESCE(posthog_data.posthog_nonorganic_consults, 0) AS posthog_nonorganic_consults
-FROM spend_data
-LEFT JOIN posthog_data 
-    ON spend_data.date = posthog_data.date 
-    AND spend_data.date_granularity = posthog_data.date_granularity 
-    AND spend_data.channel = posthog_data.channel
-WHERE spend_data.date >= '2024-08-01'
-ORDER BY spend_data.date DESC, spend_data.date_granularity, spend_data.channel
+    date,
+    date_granularity,
+    channel,
+    SUM(spend) AS spend,
+    SUM(impressions) AS impressions,
+    SUM(clicks) AS clicks,
+    SUM(signups) AS signups,
+    SUM(posthog_signups) AS posthog_signups,
+    SUM(posthog_consults) AS posthog_consults,
+    SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
+FROM (
+    SELECT 
+        date,
+        date_granularity,
+        channel,
+        SUM(spend) AS spend,
+        SUM(impressions) AS impressions,
+        SUM(clicks) AS clicks,
+        SUM(signups) AS signups,
+        0 AS posthog_signups,
+        0 AS posthog_consults,
+        0 AS posthog_nonorganic_consults
+    FROM platform_data
+    GROUP BY 1, 2, 3
+    UNION ALL
+    SELECT 
+        date,
+        date_granularity,
+        channel,
+        0 AS spend,
+        0 AS impressions,
+        0 AS clicks,
+        0 AS signups,
+        SUM(posthog_signups) AS posthog_signups,
+        SUM(posthog_consults) AS posthog_consults,
+        SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
+    FROM posthog_signups_granular
+    GROUP BY 1, 2, 3
+    UNION ALL
+    SELECT 
+        date,
+        date_granularity,
+        channel,
+        0 AS spend,
+        0 AS impressions,
+        0 AS clicks,
+        0 AS signups,
+        SUM(posthog_signups) AS posthog_signups,
+        SUM(posthog_consults) AS posthog_consults,
+        SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
+    FROM posthog_consults_granular
+    GROUP BY 1, 2, 3
+) AS combined_data
+GROUP BY 1, 2, 3
+WHERE date >= '2024-08-01'
+ORDER BY date DESC, date_granularity, channel
