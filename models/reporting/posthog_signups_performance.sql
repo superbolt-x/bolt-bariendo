@@ -15,7 +15,7 @@ WITH initial_google_data as
     LEFT JOIN 
         (SELECT count(*), campaign_id::varchar as first_campaign_id, campaign_id::varchar as last_campaign_id, campaign_name as first_utm_campaign, campaign_name as last_utm_campaign 
         FROM {{ source('reporting', 'googleads_campaign_performance') }} 
-        GROUP BY 1,2,3,4) g
+        GROUP BY 2,3,4,5) g
     USING (first_campaign_id, last_campaign_id)
     WHERE channel = 'Google'
     ),
