@@ -2,21 +2,51 @@
     alias = target.database + '_posthog_consults_performance'
 )}}
 
-SELECT
-    CASE 
-        WHEN last_utm_source IN ('facebook','fb') THEN 'Meta' 
-        WHEN last_utm_source IN ('google','youtube') THEN 'Google'
-        WHEN last_utm_source IS NULL THEN 'Other'
-        ELSE 'Other' 
-    END AS channel,
-    first_utm_event_date::date,
+WITH initial_google_data as
+    (SELECT *, first_utm_campaign::varchar as first_campaign_id, last_utm_campaign::varchar as last_campaign_id
+    FROM {{ source('s3_raw', 'consults') }}
+    WHERE last_utm_source IN ('google','youtube')
+    ),
+
+    google_data as
+    (SELECT CASE WHEN last_utm_source IN ('google','youtube') THEN 'Google' ELSE 'Other' END AS channel,
+        first_utm_event_date::date, first_utm_source, last_utm_source, g.first_utm_campaign, last_utm_event_date::date, g.last_utm_campaign, first_payment_date::date,
+        last_payment_date::date, hours_from_last_utm_event_to_payment
+    FROM initial_google_data
+    LEFT JOIN 
+        (SELECT count(*), campaign_id::varchar as first_campaign_id, campaign_id::varchar as last_campaign_id, campaign_name as first_utm_campaign, campaign_name as last_utm_campaign 
+        FROM {{ source('reporting', 'googleads_campaign_performance') }} 
+        GROUP BY 1,2,3,4) g
+    USING (first_campaign_id, last_campaign_id)
+    WHERE channel = 'Google'
+    ),
+
+    other_data as
+    (SELECT CASE 
+            WHEN last_utm_source IN ('facebook','fb') THEN 'Meta' 
+            WHEN last_utm_source IN ('google','youtube') THEN 'Google'
+            WHEN last_utm_source IS NULL THEN 'Other'
+            ELSE 'Other' 
+        END AS channel,
+        first_utm_event_date::date, first_utm_source, last_utm_source, g.first_utm_campaign, last_utm_event_date::date, g.last_utm_campaign, first_payment_date::date,
+        last_payment_date::date, hours_from_last_utm_event_to_payment
+    FROM {{ source('s3_raw', 'consults') }}
+    WHERE channel != 'Google'
+    )
+    
+SELECT 
+    channel,
+    first_utm_event_date,
     first_utm_source,
     last_utm_source,
     first_utm_campaign,
-    last_utm_event_date::date,
+    last_utm_event_date,
     last_utm_campaign,
-    first_payment_date::date,
-    last_payment_date::date,
+    first_payment_date,
+    last_payment_date,
     hours_from_last_utm_event_to_payment
-FROM {{ source('s3_raw', 'consults') }}
+FROM 
+    (SELECT * FROM google_data
+    UNION ALL
+    SELECT * FROM other_data)
 ORDER BY first_utm_event_date DESC
