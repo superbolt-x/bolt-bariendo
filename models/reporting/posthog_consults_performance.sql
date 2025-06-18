@@ -3,7 +3,7 @@
 )}}
 
 WITH initial_google_data as
-    (SELECT *, first_utm_campaign::varchar as first_campaign_id, last_utm_campaign::varchar as last_campaign_id
+    (SELECT *, SPLIT_PART(first_utm_campaign::varchar,'-cross-network',1) as first_campaign_id, SPLIT_PART(last_utm_campaign::varchar,'-cross-network',1) as last_campaign_id
     FROM {{ source('s3_raw', 'consults') }}
     WHERE last_utm_source IN ('google','youtube')
     ),
