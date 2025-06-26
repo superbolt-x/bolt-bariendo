@@ -28,11 +28,7 @@ WITH initial_google_data as
             WHEN last_utm_source IS NULL THEN 'Other'
             ELSE 'Other' 
         END AS channel,
-        first_utm_event_date::date, first_utm_source, last_utm_source, first_utm_campaign, last_utm_event_date::date,
-        
-        CASE WHEN last_utm_campaign = '[SB] Mega Prospecting - Adv+ - Signups - Sales Campaign Campaign' THEN '[SB] Mega Prospecting - Adv+ - Signups - Sales Campaign'
-        ELSE REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' ') END AS last_utm_campaign,
-        first_payment_date::date,
+        first_utm_event_date::date, first_utm_source, last_utm_source, first_utm_campaign, last_utm_event_date::date, last_utm_campaign, first_payment_date::date,
         last_payment_date::date, hours_from_last_utm_event_to_payment
     FROM {{ source('s3_raw', 'consults') }}
     WHERE channel != 'Google'
