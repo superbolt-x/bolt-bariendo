@@ -36,7 +36,7 @@ with google_data as (
         null as asset_group_status,
         date_trunc('{{ granularity }}', date) as date,
         '{{ granularity }}' as date_granularity,
-        sum(spend) as spend,
+        sum(0) as spend,
         sum(0) as impressions,
         sum(0) as clicks,
         sum(0) as purchases,
