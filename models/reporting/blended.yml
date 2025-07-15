@@ -32,3 +32,9 @@ sources:
         identifier: consults
       - name: signups
         identifier: signups
+
+  - name: gsheet_raw
+    schema: gsheet_raw
+    tables:
+      - name: asset_group_convtype_insights
+        identifier: asset_group_convtype_insights
