@@ -41,7 +41,7 @@ with google_data as (
         sum(0) as clicks,
         sum(0) as purchases,
         sum(0) as revenue,
-        sum(CASE WHEN conversion_action_name = 'Consultation Payment' THEN conversions END) as consultation_payment
+        sum(CASE WHEN conversion_action = 'Consultation Payment' THEN conversions END) as consultation_payment
     from {{ source('gsheet_raw','asset_group_convtype_insights') }}
     group by 
         campaign_name,
