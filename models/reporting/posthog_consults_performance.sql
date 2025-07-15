@@ -10,7 +10,7 @@ WITH initial_google_data as
 
     google_data as
     (SELECT CASE WHEN last_utm_source IN ('google','youtube') THEN 'Google' ELSE 'Other' END AS channel,
-        first_utm_event_date::date, first_utm_source, last_utm_source, g.first_utm_campaign, last_utm_event_date::date, last_utm_campaign, first_payment_date::date, 
+        first_utm_event_date::date, first_utm_source, last_utm_source, g.first_utm_campaign, last_utm_event_date::date, g.last_utm_campaign, first_payment_date::date, 
         last_payment_date::date, hours_from_last_utm_event_to_payment
     FROM initial_google_data
     LEFT JOIN 
@@ -19,7 +19,7 @@ WITH initial_google_data as
             LEFT JOIN 
                 (SELECT count(*), campaign_id::varchar as first_campaign_id, campaign_name as first_utm_campaign
                 FROM {{ source('reporting', 'googleads_campaign_performance') }} 
-                GROUP BY 2,3) g
+                GROUP BY 2,3) 
             USING (first_campaign_id)
             WHERE channel = 'Google'
             
@@ -30,9 +30,9 @@ WITH initial_google_data as
             LEFT JOIN 
                 (SELECT count(*), campaign_id::varchar as last_campaign_id, campaign_name as last_utm_campaign
                 FROM {{ source('reporting', 'googleads_campaign_performance') }} 
-                GROUP BY 2,3) g
+                GROUP BY 2,3) 
             USING (last_campaign_id)
-            WHERE channel = 'Google') USING (first_campaign_id,last_campaign_id)
+            WHERE channel = 'Google') g USING (first_campaign_id,last_campaign_id)
     WHERE channel = 'Google'
     ),
 
