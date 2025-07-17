@@ -3,35 +3,27 @@
 )}}
 
 WITH initial_google_data as
-    (SELECT *, SPLIT_PART(first_utm_campaign::varchar,'-cross-network',1) as first_campaign_id, SPLIT_PART(last_utm_campaign::varchar,'-cross-network',1) as last_campaign_id
+    (SELECT first_signup_date::date, first_utm_event_date::date, first_utm_source, last_utm_source, last_utm_event_date::date,  
+        SPLIT_PART(first_utm_campaign::varchar,'-cross-network',1) as first_campaign_id, SPLIT_PART(last_utm_campaign::varchar,'-cross-network',1) as last_campaign_id, 
+        SPLIT_PART(first_utm_campaign::varchar,'-cross-network',1) as first_campaign_id, SPLIT_PART(last_utm_campaign::varchar,'-cross-network',1) as last_campaign_id
     FROM {{ source('s3_raw', 'signups') }}
     WHERE last_utm_source IN ('google','youtube')
     ),
 
     google_data as
-     (SELECT * FROM
-        (SELECT CASE WHEN last_utm_source IN ('google','youtube') THEN 'Google' ELSE 'Other' END AS channel,
-            first_signup_date::date, first_utm_event_date::date, first_utm_source, last_utm_source, g.first_utm_campaign, last_utm_event_date::date, 
-            NULL as last_utm_campaign
-        FROM initial_google_data
-        LEFT JOIN 
+    (SELECT *, CASE WHEN last_utm_source IN ('google','youtube') THEN 'Google' ELSE 'Other' END AS channel
+    FROM initial_google_data
+    LEFT JOIN 
             (SELECT count(*), campaign_id::varchar as first_campaign_id, campaign_name as first_utm_campaign
-            FROM {{ source('reporting', 'googleads_campaign_performance') }} 
-            GROUP BY 2,3) g
-        USING (first_campaign_id)
-        WHERE channel = 'Google'
-
-        UNION ALL
-
-        SELECT CASE WHEN last_utm_source IN ('google','youtube') THEN 'Google' ELSE 'Other' END AS channel,
-            first_signup_date::date, first_utm_event_date::date, first_utm_source, last_utm_source, g.first_utm_campaign, last_utm_event_date::date, g.last_utm_campaign
-        FROM initial_google_data
-        LEFT JOIN 
-            (SELECT count(*), campaign_id::varchar as last_campaign_id, campaign_name as last_utm_campaign 
-            FROM {{ source('reporting', 'googleads_campaign_performance') }} 
-            GROUP BY 2,3) g
-        USING (last_campaign_id)
-        WHERE channel = 'Google')
+                FROM {{ source('reporting', 'googleads_campaign_performance') }}
+                GROUP BY 2,3)
+            USING (first_campaign_id)
+	LEFT JOIN 
+            (SELECT count(*), campaign_id::varchar as last_campaign_id, campaign_name as last_utm_campaign
+                FROM {{ source('reporting','googleads_campaign_performance') }}
+                GROUP BY 2,3)
+            USING (last_campaign_id)
+    WHERE channel = 'Google'
     ),
 
     other_data as
@@ -56,7 +48,7 @@ SELECT
     last_utm_event_date,
     last_utm_campaign
 FROM 
-    (SELECT * FROM google_data
+    (SELECT channel, first_signup_date, first_utm_event_date, first_utm_source, last_utm_source, first_utm_campaign, last_utm_event_date, last_utm_campaign FROM google_data
     UNION ALL
     SELECT * FROM other_data)
 ORDER BY first_utm_event_date DESC
