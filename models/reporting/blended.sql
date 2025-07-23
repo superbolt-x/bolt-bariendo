@@ -159,6 +159,6 @@ SELECT
     SUM(posthog_consults) AS posthog_consults,
     SUM(posthog_nonorganic_consults) AS posthog_nonorganic_consults
 FROM combined_data
-WHERE date >= '2024-08-01'
+WHERE date >= '2024-05-01'
 GROUP BY 1, 2, 3
 ORDER BY date DESC, date_granularity, channel
