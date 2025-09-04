@@ -39,7 +39,7 @@ WITH initial_google_data as
     
 SELECT 
     channel,
-    first_signup_date
+    first_signup_date,
     first_utm_event_date,
     first_utm_source,
     last_utm_source,
