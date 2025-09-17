@@ -114,4 +114,4 @@ SELECT
 FROM combined_data
 WHERE date >= '2024-05-01'
 GROUP BY 1,2,3
-ORDER BY date DESC, date_granularity, channel;
+ORDER BY date DESC, date_granularity, channel
