@@ -172,4 +172,4 @@ SELECT
     SUM(posthog_consults) AS posthog_consults
 FROM blended_data
 GROUP BY 1,2,3,4
-ORDER BY date DESC, channel, campaign_name;
+ORDER BY date DESC, channel, campaign_name
