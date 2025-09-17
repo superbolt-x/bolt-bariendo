@@ -97,7 +97,7 @@ combined_data AS (
     SELECT * FROM posthog_signups
     UNION ALL
     SELECT * FROM posthog_consults
-)
+)   -- <--- no trailing comma here
 
 -- Final output
 SELECT
