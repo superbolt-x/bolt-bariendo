@@ -8,32 +8,102 @@ WITH spend_data AS (
     SELECT date, date_granularity, 'Google' AS channel, campaign_name, 
            MIN(campaign_id::text) AS campaign_id,
            SUM(spend) AS spend, SUM(impressions) AS impressions, SUM(clicks) AS clicks,
-           SUM(signups) AS signups, SUM(consultation_payment) AS consultation_payment
+           SUM(signups) AS signups, SUM(consultation_payment) AS consultation_payment,
+           0 AS posthog_signups, 0 AS posthog_consults
     FROM reporting.bariendo_googleads_campaign_performance
     GROUP BY 1,2,3,4
+
     UNION ALL
+
     SELECT date, date_granularity, 'Meta' AS channel, campaign_name, 
            MIN(campaign_id::text) AS campaign_id,
-           SUM(spend), SUM(impressions), SUM(link_clicks), SUM(signups), SUM(consultation_payment)
+           SUM(spend), SUM(impressions), SUM(link_clicks), SUM(signups), SUM(consultation_payment),
+           0,0
     FROM reporting.bariendo_facebook_ad_performance
     GROUP BY 1,2,3,4
 ),
 
+-- Posthog consults with aligned schema
 posthog_consults_data AS (
-    {{ posthog_granular_campaign('reporting.bariendo_posthog_consults_performance', 'last_payment_date', 'posthog_consults') }}
+    {% for date_granularity in date_granularity_list %}
+    SELECT 
+        DATE_TRUNC('{{ date_granularity }}', last_payment_date) AS date,
+        '{{ date_granularity }}' AS date_granularity,
+        CASE
+            WHEN last_utm_campaign !~* 'gbp-listing' THEN 'Organic'
+            WHEN p.channel = 'Meta' THEN 'Meta'
+            WHEN p.channel = 'Google' THEN 'Google'
+            ELSE 'Other'
+        END AS channel,
+        CASE
+            WHEN p.channel = 'Meta' THEN 
+                COALESCE(fb_lookup.campaign_name,
+                         REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
+            WHEN p.channel = 'Google' THEN COALESCE(g_lookup.campaign_name, last_utm_campaign)
+            ELSE last_utm_campaign
+        END AS campaign_name,
+        NULL::text AS campaign_id,
+        0 AS spend, 0 AS impressions, 0 AS clicks, 0 AS signups, 0 AS consultation_payment,
+        0 AS posthog_signups,
+        COUNT(*) AS posthog_consults
+    FROM reporting.bariendo_posthog_consults_performance p
+    LEFT JOIN (
+        SELECT DISTINCT campaign_id::text, campaign_name
+        FROM reporting.bariendo_facebook_ad_performance
+    ) fb_lookup ON p.last_utm_campaign = fb_lookup.campaign_id::text
+               AND p.channel = 'Meta'
+    LEFT JOIN (
+        SELECT DISTINCT campaign_id::text, campaign_name
+        FROM reporting.bariendo_googleads_campaign_performance
+    ) g_lookup ON p.last_utm_campaign = g_lookup.campaign_id::text
+               AND p.channel = 'Google'
+    WHERE last_utm_campaign IS NOT NULL
+    GROUP BY 1,2,3,4
+    {% if not loop.last %} UNION ALL {% endif %}
+    {% endfor %}
 ),
 
+-- Posthog signups with aligned schema
 posthog_signups_data AS (
-    {{ posthog_granular_campaign('reporting.bariendo_posthog_signups_performance', 'first_signup_date', 'posthog_signups') }}
+    {% for date_granularity in date_granularity_list %}
+    SELECT 
+        DATE_TRUNC('{{ date_granularity }}', first_signup_date) AS date,
+        '{{ date_granularity }}' AS date_granularity,
+        CASE
+            WHEN last_utm_campaign !~* 'gbp-listing' THEN 'Organic'
+            WHEN p.channel = 'Meta' THEN 'Meta'
+            WHEN p.channel = 'Google' THEN 'Google'
+            ELSE 'Other'
+        END AS channel,
+        CASE
+            WHEN p.channel = 'Meta' THEN 
+                COALESCE(fb_lookup.campaign_name,
+                         REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
+            WHEN p.channel = 'Google' THEN COALESCE(g_lookup.campaign_name, last_utm_campaign)
+            ELSE last_utm_campaign
+        END AS campaign_name,
+        NULL::text AS campaign_id,
+        0 AS spend, 0 AS impressions, 0 AS clicks, 0 AS signups, 0 AS consultation_payment,
+        COUNT(*) AS posthog_signups,
+        0 AS posthog_consults
+    FROM reporting.bariendo_posthog_signups_performance p
+    LEFT JOIN (
+        SELECT DISTINCT campaign_id::text, campaign_name
+        FROM reporting.bariendo_facebook_ad_performance
+    ) fb_lookup ON p.last_utm_campaign = fb_lookup.campaign_id::text
+               AND p.channel = 'Meta'
+    LEFT JOIN (
+        SELECT DISTINCT campaign_id::text, campaign_name
+        FROM reporting.bariendo_googleads_campaign_performance
+    ) g_lookup ON p.last_utm_campaign = g_lookup.campaign_id::text
+               AND p.channel = 'Google'
+    WHERE last_utm_campaign IS NOT NULL
+    GROUP BY 1,2,3,4
+    {% if not loop.last %} UNION ALL {% endif %}
+    {% endfor %}
 ),
 
-campaign_id_lookup AS (
-    SELECT DISTINCT channel, campaign_name, MIN(campaign_id) AS campaign_id
-    FROM spend_data
-    WHERE campaign_id IS NOT NULL AND campaign_id != 'unknown'
-    GROUP BY channel, campaign_name
-),
-
+-- Ensure all campaigns are represented
 all_campaigns AS (
     SELECT DISTINCT date, date_granularity, channel, campaign_name FROM spend_data
     UNION
@@ -42,6 +112,15 @@ all_campaigns AS (
     SELECT DISTINCT date, date_granularity, channel, campaign_name FROM posthog_signups_data
 ),
 
+-- Campaign ID lookup
+campaign_id_lookup AS (
+    SELECT DISTINCT channel, campaign_name, MIN(campaign_id) AS campaign_id
+    FROM spend_data
+    WHERE campaign_id IS NOT NULL AND campaign_id != 'unknown'
+    GROUP BY channel, campaign_name
+),
+
+-- Final blend
 blended_data AS (
     SELECT
         ac.date::date AS date,
@@ -93,4 +172,4 @@ SELECT
     SUM(posthog_consults) AS posthog_consults
 FROM blended_data
 GROUP BY 1,2,3,4
-ORDER BY date DESC, channel, campaign_name
+ORDER BY date DESC, channel, campaign_name;
