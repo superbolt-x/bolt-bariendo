@@ -30,7 +30,7 @@ posthog_consults_data AS (
         DATE_TRUNC('{{ date_granularity }}', last_payment_date) AS date,
         '{{ date_granularity }}' AS date_granularity,
         CASE
-            WHEN last_utm_campaign !~* 'gbp-listing' THEN 'Organic'
+            WHEN last_utm_campaign ~* 'gbp-listing' THEN 'Organic'
             WHEN p.channel = 'Meta' THEN 'Meta'
             WHEN p.channel = 'Google' THEN 'Google'
             ELSE 'Other'
@@ -70,7 +70,7 @@ posthog_signups_data AS (
         DATE_TRUNC('{{ date_granularity }}', first_signup_date) AS date,
         '{{ date_granularity }}' AS date_granularity,
         CASE
-            WHEN last_utm_campaign !~* 'gbp-listing' THEN 'Organic'
+            WHEN last_utm_campaign ~* 'gbp-listing' THEN 'Organic'
             WHEN p.channel = 'Meta' THEN 'Meta'
             WHEN p.channel = 'Google' THEN 'Google'
             ELSE 'Other'
