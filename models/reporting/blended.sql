@@ -4,30 +4,6 @@
 
 {%- set date_granularity_list = ['day','week','month','quarter','year'] -%}
 
--- Macro for posthog granular metrics with channel logic
-{% macro posthog_granular(source_table, date_col, metric) %}
-    {% for date_granularity in date_granularity_list %}
-    SELECT 
-        {{ date_granularity }} AS date,
-        '{{ date_granularity }}' AS date_granularity,
-        CASE
-            WHEN last_utm_campaign !~* 'gbp-listing' THEN 'Organic'
-            WHEN last_utm_source IN ('facebook','fb') THEN 'Meta'
-            WHEN last_utm_source IN ('google','youtube') THEN 'Google'
-            ELSE 'Other'
-        END AS channel,
-        0 AS spend,
-        0 AS impressions,
-        0 AS clicks,
-        0 AS signups,
-        0 AS consults,
-        COUNT(*) AS {{ metric }}
-    FROM {{ source_table }}
-    GROUP BY 1,2,3
-    {% if not loop.last %} UNION ALL {% endif %}
-    {% endfor %}
-{% endmacro %}
-
 WITH 
     consults AS (
         SELECT *, {{ get_date_parts('last_payment_date') }}
