@@ -15,7 +15,12 @@ WITH spend_data AS (
 
     UNION ALL
 
-    SELECT date, date_granularity, 'Meta' AS channel, campaign_name, 
+    SELECT date, date_granularity, 'Meta' AS channel, 
+            CASE WHEN campaign_name IN 
+                ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign') 
+                THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+                ELSE campaign_name 
+            END AS campaign_name, 
            MIN(campaign_id::text) AS campaign_id,
            SUM(spend), SUM(impressions), SUM(link_clicks), SUM(signups), SUM(consultation_payment),
            0,0
@@ -36,8 +41,9 @@ posthog_consults_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
-            WHEN p.channel = 'Meta' THEN 
-                COALESCE(fb_lookup.campaign_name,
+            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign') 
+                THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+            WHEN p.channel = 'Meta' THEN COALESCE(fb_lookup.campaign_name,
                          REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
             WHEN p.channel = 'Google' THEN COALESCE(g_lookup.campaign_name, last_utm_campaign)
             ELSE last_utm_campaign
@@ -48,7 +54,12 @@ posthog_consults_data AS (
         COUNT(*) AS posthog_consults
     FROM reporting.bariendo_posthog_consults_performance p
     LEFT JOIN (
-        SELECT DISTINCT campaign_id::text, campaign_name
+        SELECT DISTINCT campaign_id::text, 
+        CASE 
+            WHEN campaign_name IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign') 
+                THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+            ELSE campaign_name 
+        END AS campaign_name
         FROM reporting.bariendo_facebook_ad_performance
     ) fb_lookup ON p.last_utm_campaign = fb_lookup.campaign_id::text
                AND p.channel = 'Meta'
