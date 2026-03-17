@@ -41,11 +41,9 @@ posthog_consults_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
-            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
+            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv - Consultation Payment - Leads Campaign') 
                 THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
-            WHEN p.channel = 'Meta' THEN COALESCE(fb_lookup.campaign_name,
-                         REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
-            WHEN p.channel = 'Google' THEN COALESCE(g_lookup.campaign_name, last_utm_campaign)
+            WHEN p.channel = 'Meta' THEN REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
             ELSE last_utm_campaign
         END AS campaign_name,
         NULL::text AS campaign_id,
@@ -72,12 +70,9 @@ posthog_signups_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
-            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
+            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv - Consultation Payment - Leads Campaign') 
                 THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
-            WHEN p.channel = 'Meta' THEN 
-                COALESCE(fb_lookup.campaign_name,
-                         REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
-            WHEN p.channel = 'Google' THEN COALESCE(g_lookup.campaign_name, last_utm_campaign)
+            WHEN p.channel = 'Meta' THEN REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
             ELSE last_utm_campaign
         END AS campaign_name,
         NULL::text AS campaign_id,
