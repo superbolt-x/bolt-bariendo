@@ -17,7 +17,7 @@ WITH spend_data AS (
 
     SELECT date, date_granularity, 'Meta' AS channel, 
             CASE WHEN campaign_name IN 
-                ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign') 
+                ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
                 THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
                 ELSE campaign_name 
             END AS campaign_name, 
@@ -41,7 +41,7 @@ posthog_consults_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
-            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign') 
+            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
                 THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
             WHEN p.channel = 'Meta' THEN COALESCE(fb_lookup.campaign_name,
                          REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
@@ -56,7 +56,7 @@ posthog_consults_data AS (
     LEFT JOIN (
         SELECT DISTINCT campaign_id::text, 
         CASE 
-            WHEN campaign_name IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign') 
+            WHEN campaign_name IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
                 THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
             ELSE campaign_name 
         END AS campaign_name
@@ -87,6 +87,8 @@ posthog_signups_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
+            WHEN last_utm_campaign IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
+                THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
             WHEN p.channel = 'Meta' THEN 
                 COALESCE(fb_lookup.campaign_name,
                          REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign'))
@@ -99,7 +101,12 @@ posthog_signups_data AS (
         0 AS posthog_consults
     FROM reporting.bariendo_posthog_signups_performance p
     LEFT JOIN (
-        SELECT DISTINCT campaign_id::text, campaign_name
+        SELECT DISTINCT campaign_id::text, 
+        CASE 
+            WHEN campaign_name IN ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
+                THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+            ELSE campaign_name 
+        END AS campaign_name
         FROM reporting.bariendo_facebook_ad_performance
     ) fb_lookup ON p.last_utm_campaign = fb_lookup.campaign_id::text
                AND p.channel = 'Meta'
