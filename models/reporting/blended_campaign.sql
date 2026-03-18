@@ -19,6 +19,15 @@ WITH spend_data AS (
             CASE WHEN campaign_name IN 
                 ('[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign','[SB] Mega Prospecting - Adv+ - Consultation Payment - Leads Campaign') 
                 THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+                WHEN campaign_name IN 
+                ('[SB] Retargeting - Cherry - Sales','[SB] Retargeting - Sales') 
+                THEN '[SB] Retargeting - Cherry - Sales' 
+                WHEN campaign_name IN 
+                ('[SB] Boston - Prospecting - Adv+ - Strawberry - Sales Campaign','[SB] Boston - Prospecting - Adv+ - Signups - Sales Campaign') 
+                THEN '[SB] Boston - Prospecting - Adv+ - Strawberry - Sales Campaign' 
+                WHEN campaign_name IN 
+                ('[SB] Spanish - Prospecting FL/Texas - Adv+ - Strawberry - Sales Campaign','[SB] Spanish - Prospecting FL/Texas - Adv+ - Signups - Sales Campaign') 
+                THEN '[SB] Spanish - Prospecting FL/Texas - Adv+ - Strawberry - Sales Campaign' 
                 ELSE campaign_name 
             END AS campaign_name, 
            MIN(campaign_id::text) AS campaign_id,
@@ -41,7 +50,10 @@ posthog_consults_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
-            WHEN last_utm_campaign = '[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign' THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+            WHEN last_utm_campaign = '[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign' THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign'
+            WHEN last_utm_campaign = '[SB] Retargeting - Sales' THEN '[SB] Retargeting - Cherry - Sales'
+            WHEN last_utm_campaign = '[SB] Boston - Prospecting - Adv  - Signups - Sales Campaign' THEN '[SB] Boston - Prospecting - Adv  - Strawberry - Sales Campaign'
+            WHEN last_utm_campaign = '[SB] Spanish - Prospecting FL/Texas - Adv  - Signups - Sales Campaign' THEN '[SB] Spanish - Prospecting FL/Texas - Adv  - Strawberry - Sales Campaign'
             WHEN p.channel = 'Meta' THEN REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign')
             ELSE last_utm_campaign
         END AS campaign_name,
@@ -69,7 +81,10 @@ posthog_signups_data AS (
             ELSE 'Other'
         END AS channel,
         CASE
-            WHEN last_utm_campaign = '[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign' THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign' 
+            WHEN last_utm_campaign = '[SB] Mega Prospecting - Adv  - Consultation Payment - Leads Campaign' THEN '[SB] Mega Prospecting - Adv+ - Cherry - Leads Campaign'
+            WHEN last_utm_campaign = '[SB] Retargeting - Sales' THEN '[SB] Retargeting - Cherry - Sales'
+            WHEN last_utm_campaign = '[SB] Boston - Prospecting - Adv  - Signups - Sales Campaign' THEN '[SB] Boston - Prospecting - Adv  - Strawberry - Sales Campaign'
+            WHEN last_utm_campaign = '[SB] Spanish - Prospecting FL/Texas - Adv  - Signups - Sales Campaign' THEN '[SB] Spanish - Prospecting FL/Texas - Adv  - Strawberry - Sales Campaign' 
             WHEN p.channel = 'Meta' THEN REPLACE(REPLACE(REPLACE(last_utm_campaign, '- Adv ', '- Adv+ '), '  ', ' '), 'Campaign Campaign', 'Campaign')
             ELSE last_utm_campaign
         END AS campaign_name,
